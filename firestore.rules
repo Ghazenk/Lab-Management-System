@@ -1,0 +1,125 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: users
+// Fields:
+//   - uid: string (required)
+//   - email: string (required)
+//   - displayName: string
+//   - role: string (admin, pathologist, technician)
+//
+// Collection: samples
+// Fields:
+//   - id: string
+//   - patientName: string (required, max 100)
+//   - patientId: string
+//   - testType: string (required)
+//   - priority: string (High, Medium, Low)
+//   - status: string (Pending, Processing, Completed, Archived)
+//   - collectedAt: timestamp
+//   - createdBy: string (uid)
+//
+// Collection: subjects
+// Fields:
+//   - name: string (required, max 100)
+//   - age: number (required, 0-150)
+//   - gender: string
+//   - email: string
+//   - phone: string
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (getUserData().role == 'admin' || 
+         (request.auth.token.email == "1109193@stud.uot.edu.pk" && request.auth.token.email_verified == true));
+    }
+
+    function isPathologist() {
+      return isAuthenticated() && (getUserData().role == 'pathologist' || isAdmin());
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'role']) &&
+             data.uid == request.auth.uid &&
+             isValidEmail(data.email) &&
+             data.role in ['admin', 'pathologist', 'technician'];
+    }
+
+    function isValidSample(data) {
+      return data.keys().hasAll(['patientName', 'testType', 'priority', 'status']) &&
+             data.patientName is string && data.patientName.size() <= 100 &&
+             data.testType is string && data.testType.size() <= 100 &&
+             data.priority in ['High', 'Medium', 'Low'] &&
+             data.status in ['Pending', 'Processing', 'Completed', 'Archived'];
+    }
+
+    function isValidSubject(data) {
+      return data.keys().hasAll(['name', 'age', 'gender']) &&
+             data.name is string && data.name.size() <= 100 &&
+             data.age is number && data.age >= 0 && data.age <= 150;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    // User Profiles
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role != 'admin';
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role == resource.data.role;
+      allow write: if isAdmin();
+    }
+
+    // Samples
+    match /samples/{sampleId} {
+      allow read: if isAuthenticated();
+      allow create: if isPathologist() && isValidSample(request.resource.data);
+      allow update: if isPathologist() && isValidSample(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // Subjects
+    match /subjects/{subjectId} {
+      allow read: if isAuthenticated();
+      allow create: if isPathologist() && isValidSubject(request.resource.data);
+      allow update: if isPathologist() && isValidSubject(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

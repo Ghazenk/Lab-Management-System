@@ -1,0 +1,80 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Georgia", serif;
+  --font-mono: "Courier New", Courier, monospace;
+
+  --color-surface: var(--surface);
+  --color-surface-container-low: var(--surface-low);
+  --color-surface-container-lowest: var(--surface-lowest);
+  --color-primary: var(--primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-dim: var(--on-surface-dim);
+  --color-on-primary: var(--on-primary);
+  --color-secondary: var(--secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary-container: var(--on-secondary-container);
+  --color-border: var(--border-color);
+
+  --radius-xl: 0rem;
+  --radius-2xl: 0rem;
+
+  --shadow-whisper: none;
+}
+
+:root {
+  --surface: #fcfcfc;
+  --surface-low: #f5f5f5;
+  --surface-lowest: #ffffff;
+  --primary: #8e7340;
+  --primary-container: #c5a059;
+  --on-surface: #1a1a1a;
+  --on-surface-dim: #666666;
+  --on-primary: #ffffff;
+  --secondary: #f5f5f5;
+  --secondary-container: #ebebeb;
+  --on-secondary-container: #8e7340;
+  --border-color: rgba(0, 0, 0, 0.08);
+}
+
+.dark {
+  --surface: #0a0a0a;
+  --surface-low: #141414;
+  --surface-lowest: #1a1a1a;
+  --primary: #c5a059;
+  --primary-container: #8e7340;
+  --on-surface: #e0e0e0;
+  --on-surface-dim: #888888;
+  --on-primary: #0a0a0a;
+  --secondary: #141414;
+  --secondary-container: #222222;
+  --on-secondary-container: #c5a059;
+  --border-color: rgba(255, 255, 255, 0.08);
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-on-surface font-sans antialiased transition-colors duration-300;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif font-normal;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-surface/80 backdrop-blur-xl;
+  }
+  
+  .primary-gradient {
+    @apply bg-primary;
+  }
+
+  .accent-border {
+    @apply border border-border;
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Stores user-specific settings and roles.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "pathologist", "technician"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Sample": {
+      "title": "Sample",
+      "description": "Represents a laboratory specimen.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "patientName": { "type": "string" },
+        "patientId": { "type": "string" },
+        "testType": { "type": "string" },
+        "priority": { "type": "string", "enum": ["High", "Medium", "Low"] },
+        "status": { "type": "string", "enum": ["Pending", "Processing", "Completed", "Archived"] },
+        "collectedAt": { "type": "string", "format": "date-time" },
+        "createdBy": { "type": "string" }
+      },
+      "required": ["patientName", "testType", "priority", "status"]
+    },
+    "Subject": {
+      "title": "Subject",
+      "description": "Represents a patient or research subject.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "age": { "type": "number" },
+        "gender": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "lastVisit": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "age", "gender"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile documents."
+    },
+    "/samples/{sampleId}": {
+      "schema": "Sample",
+      "description": "Laboratory sample documents."
+    },
+    "/subjects/{subjectId}": {
+      "schema": "Subject",
+      "description": "Patient/Subject documents."
+    }
+  }
+}
