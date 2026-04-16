@@ -49,9 +49,21 @@ export default function Equipment({ searchQuery: globalSearch }: EquipmentProps)
     name: '',
     status: 'Online',
     health: 100,
+    alert_threshold: 80,
     last_service: new Date().toISOString().split('T')[0],
     temperature: '22°C'
   });
+
+  const triggerAlert = async (item: any, currentHealth: number) => {
+    if (!isSupabaseConfigured || currentHealth >= (item.alert_threshold || 80)) return;
+
+    await supabase.from('notifications').insert([{
+      title: 'Equipment Health Alert',
+      message: `Critical: ${item.name} health has dropped to ${currentHealth}%, which is below the threshold of ${item.alert_threshold || 80}%.`,
+      type: 'warning',
+      read: false
+    }]);
+  };
 
   const fetchEquipment = async () => {
     if (!isSupabaseConfigured) return;
@@ -116,6 +128,7 @@ export default function Equipment({ searchQuery: globalSearch }: EquipmentProps)
         await supabase.from('equipment_history').insert([{
           equipment_id: data[0].id,
           health: newEquipment.health,
+          technician: 'Dr. Ghazen Khalid',
           recorded_at: new Date().toISOString()
         }]);
       }
@@ -125,6 +138,7 @@ export default function Equipment({ searchQuery: globalSearch }: EquipmentProps)
         name: '',
         status: 'Online',
         health: 100,
+        alert_threshold: 80,
         last_service: new Date().toISOString().split('T')[0],
         temperature: '22°C'
       });
@@ -135,6 +149,7 @@ export default function Equipment({ searchQuery: globalSearch }: EquipmentProps)
 
   const handleMaintenance = async (id: string) => {
     try {
+      const item = equipmentList.find(e => e.id === id);
       const { error } = await supabase
         .from('equipment')
         .update({ 
@@ -150,7 +165,15 @@ export default function Equipment({ searchQuery: globalSearch }: EquipmentProps)
       await supabase.from('equipment_history').insert([{
         equipment_id: id,
         health: 100,
+        technician: 'Dr. Ghazen Khalid',
         recorded_at: new Date().toISOString()
+      }]);
+
+      await supabase.from('notifications').insert([{
+        title: 'Maintenance Logged',
+        message: `Maintenance performed on ${item?.name || 'Equipment'} by Dr. Ghazen Khalid.`,
+        type: 'success',
+        read: false
       }]);
 
       setTimeout(async () => {
@@ -236,8 +259,13 @@ export default function Equipment({ searchQuery: globalSearch }: EquipmentProps)
         await supabase.from('equipment_history').insert([{
           equipment_id: editForm.id,
           health: editForm.health,
+          technician: 'Dr. Ghazen Khalid',
           recorded_at: new Date().toISOString()
         }]);
+
+        if (editForm.health < (editForm.alert_threshold || 80)) {
+          await triggerAlert(editForm, editForm.health);
+        }
       }
 
       setEditingId(null);
@@ -349,6 +377,18 @@ export default function Equipment({ searchQuery: globalSearch }: EquipmentProps)
                   max="100"
                   value={newEquipment.health}
                   onChange={e => setNewEquipment({...newEquipment, health: parseInt(e.target.value)})}
+                  className="w-full bg-transparent border-b border-border py-1 text-[13px] focus:outline-none focus:border-primary"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] uppercase tracking-widest text-on-surface-dim">Alert Threshold (%)</label>
+                <input 
+                  required
+                  type="number" 
+                  min="0"
+                  max="100"
+                  value={newEquipment.alert_threshold}
+                  onChange={e => setNewEquipment({...newEquipment, alert_threshold: parseInt(e.target.value)})}
                   className="w-full bg-transparent border-b border-border py-1 text-[13px] focus:outline-none focus:border-primary"
                 />
               </div>
@@ -480,6 +520,17 @@ export default function Equipment({ searchQuery: globalSearch }: EquipmentProps)
                           className="w-full bg-transparent border-b border-border py-1 text-[11px] outline-none focus:border-primary"
                         />
                       </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase tracking-widest text-on-surface-dim">Alert Threshold (%)</label>
+                        <input 
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={editForm.alert_threshold || 80}
+                          onChange={e => setEditForm({...editForm, alert_threshold: parseInt(e.target.value)})}
+                          className="w-full bg-transparent border-b border-border py-1 text-[11px] outline-none focus:border-primary"
+                        />
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
@@ -527,14 +578,16 @@ export default function Equipment({ searchQuery: globalSearch }: EquipmentProps)
                         <Cpu className="w-5 h-5" />
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={`text-[10px] font-bold uppercase tracking-widest ${
-                          item.status === 'Online' ? 'text-emerald-500' :
-                          item.status === 'Warning' ? 'text-amber-500' : 
-                          item.status === 'Maintenance' ? 'text-rose-500' : 'text-on-surface-dim'
+                        <div className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest border flex items-center gap-1.5 ${
+                          item.status === 'Online' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/5' :
+                          item.status === 'Warning' ? 'border-amber-500/30 text-amber-500 bg-amber-500/5' : 
+                          item.status === 'Maintenance' ? 'border-rose-500/30 text-rose-500 bg-rose-500/5' : 'border-border text-on-surface-dim bg-surface-low'
                         }`}>
+                          {item.status === 'Online' && <CheckCircle2 className="w-2.5 h-2.5" />}
+                          {item.status === 'Warning' && <AlertCircle className="w-2.5 h-2.5" />}
+                          {item.status === 'Maintenance' && <Zap className="w-2.5 h-2.5" />}
                           {item.status}
-                        </span>
-                        {item.status === 'Online' ? <CheckCircle2 className="w-3 h-3 text-emerald-500" /> : <AlertCircle className="w-3 h-3 text-amber-500" />}
+                        </div>
                       </div>
                     </div>
                     
@@ -638,21 +691,25 @@ export default function Equipment({ searchQuery: globalSearch }: EquipmentProps)
 
               <div className="p-8 space-y-12">
                 {/* Quick Stats */}
-                <div className="grid grid-cols-3 gap-6">
-                  <div className="border border-border p-6">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+                  <div className="border border-border p-4 sm:p-6">
                     <span className="text-[10px] uppercase tracking-widest text-on-surface-dim block mb-2">Status</span>
                     <span className={`text-sm font-bold uppercase tracking-widest ${
                       selectedNode.status === 'Online' ? 'text-emerald-500' :
                       selectedNode.status === 'Warning' ? 'text-amber-500' : 'text-rose-500'
                     }`}>{selectedNode.status}</span>
                   </div>
-                  <div className="border border-border p-6">
+                  <div className="border border-border p-4 sm:p-6">
                     <span className="text-[10px] uppercase tracking-widest text-on-surface-dim block mb-2">Health</span>
                     <span className="text-sm font-bold text-on-surface">{selectedNode.health}%</span>
                   </div>
-                  <div className="border border-border p-6">
+                  <div className="border border-border p-4 sm:p-6">
                     <span className="text-[10px] uppercase tracking-widest text-on-surface-dim block mb-2">Temp</span>
                     <span className="text-sm font-bold text-on-surface">{selectedNode.temperature}</span>
+                  </div>
+                  <div className="border border-border p-4 sm:p-6">
+                    <span className="text-[10px] uppercase tracking-widest text-on-surface-dim block mb-2">Threshold</span>
+                    <span className="text-sm font-bold text-rose-500">{selectedNode.alert_threshold || 80}%</span>
                   </div>
                 </div>
 
@@ -713,10 +770,12 @@ export default function Equipment({ searchQuery: globalSearch }: EquipmentProps)
                     {historyData.slice().reverse().map((log, idx) => (
                       <div key={idx} className="p-4 border border-border flex items-center justify-between group hover:border-primary/40 transition-all">
                         <div className="flex items-center gap-4">
-                          <div className={`w-1.5 h-1.5 rounded-full ${log.health > 80 ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                          <div className={`w-1.5 h-1.5 rounded-full ${log.health > 80 ? 'bg-emerald-500' : 'bg-amber-400'}`} />
                           <div>
                             <p className="text-[12px] text-on-surface">Health Check: {log.health}%</p>
-                            <p className="text-[10px] text-on-surface-dim uppercase tracking-widest">{new Date(log.recorded_at).toLocaleString()}</p>
+                            <p className="text-[10px] text-on-surface-dim uppercase tracking-widest">
+                              {new Date(log.recorded_at).toLocaleString()} • {log.technician || 'System'}
+                            </p>
                           </div>
                         </div>
                         <span className="text-[10px] uppercase tracking-widest text-on-surface-dim opacity-0 group-hover:opacity-100 transition-opacity">Verified</span>

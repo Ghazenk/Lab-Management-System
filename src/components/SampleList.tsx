@@ -19,7 +19,10 @@ export default function SampleList({ searchQuery: globalSearch }: SampleListProp
   const [samples, setSamples] = useState<any[]>([]);
   const [localSearch, setLocalSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [technicianFilter, setTechnicianFilter] = useState('All');
+  const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [isAdding, setIsAdding] = useState(false);
+  const [selectedSample, setSelectedSample] = useState<any>(null);
   const [newSample, setNewSample] = useState({
     patient_name: '',
     test_type: '',
@@ -83,12 +86,27 @@ export default function SampleList({ searchQuery: globalSearch }: SampleListProp
     }
   };
 
+  const technicians = Array.from(new Set(samples.map(s => s.created_by).filter(Boolean)));
+
   const filteredSamples = samples.filter(s => {
     const matchesSearch = s.patient_name?.toLowerCase().includes((localSearch || globalSearch).toLowerCase()) ||
                          s.test_type?.toLowerCase().includes((localSearch || globalSearch).toLowerCase()) ||
                          s.id?.toLowerCase().includes((localSearch || globalSearch).toLowerCase());
     const matchesStatus = statusFilter === 'All' || s.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesTechnician = technicianFilter === 'All' || s.created_by === technicianFilter;
+    
+    let matchesDate = true;
+    if (dateRange.start || dateRange.end) {
+      const sampleDate = new Date(s.collected_at).getTime();
+      if (dateRange.start) {
+        matchesDate = matchesDate && sampleDate >= new Date(dateRange.start).getTime();
+      }
+      if (dateRange.end) {
+        matchesDate = matchesDate && sampleDate <= new Date(dateRange.end).getTime() + 86400000; // Include full end day
+      }
+    }
+
+    return matchesSearch && matchesStatus && matchesTechnician && matchesDate;
   });
 
   const statusColors: Record<string, string> = {
@@ -106,30 +124,6 @@ export default function SampleList({ searchQuery: globalSearch }: SampleListProp
           <p className="text-on-surface-dim text-[10px] sm:text-[12px] uppercase tracking-widest mt-1">Analytical Specimen Queue</p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <div className="relative flex-1">
-            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-dim" />
-            <select 
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full pl-11 pr-6 py-2 bg-transparent border border-border rounded-full text-[12px] uppercase tracking-widest focus:outline-none focus:border-primary sm:w-48 appearance-none cursor-pointer transition-all"
-            >
-              <option value="All" className="bg-surface">All Statuses</option>
-              <option value="Pending" className="bg-surface">Pending</option>
-              <option value="Processing" className="bg-surface">Processing</option>
-              <option value="Completed" className="bg-surface">Completed</option>
-              <option value="Cancelled" className="bg-surface">Cancelled</option>
-            </select>
-          </div>
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-dim" />
-            <input 
-              type="text" 
-              placeholder="Search registry..." 
-              value={localSearch}
-              onChange={(e) => setLocalSearch(e.target.value)}
-              className="w-full pl-11 pr-6 py-2 bg-transparent border border-border rounded-full text-[12px] uppercase tracking-widest focus:outline-none focus:border-primary sm:w-64 transition-all"
-            />
-          </div>
           <button 
             onClick={() => setIsAdding(true)}
             className="flex items-center justify-center gap-2 px-6 py-2 border border-primary text-primary rounded-full font-medium text-[11px] uppercase tracking-widest hover:bg-primary hover:text-on-primary transition-all"
@@ -138,6 +132,76 @@ export default function SampleList({ searchQuery: globalSearch }: SampleListProp
           </button>
         </div>
       </header>
+
+      {/* Enhanced Filtering Bar */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border border-border bg-surface-low rounded-lg">
+        <div className="space-y-1.5">
+          <label className="text-[9px] uppercase tracking-widest text-on-surface-dim ml-2">Status</label>
+          <div className="relative">
+            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-dim" />
+            <select 
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-transparent border border-border rounded-full text-[11px] uppercase tracking-widest focus:outline-none focus:border-primary appearance-none cursor-pointer"
+            >
+              <option value="All" className="bg-surface">All Statuses</option>
+              <option value="Pending" className="bg-surface">Pending</option>
+              <option value="Processing" className="bg-surface">Processing</option>
+              <option value="Completed" className="bg-surface">Completed</option>
+              <option value="Cancelled" className="bg-surface">Cancelled</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[9px] uppercase tracking-widest text-on-surface-dim ml-2">Technician</label>
+          <div className="relative">
+            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-dim" />
+            <select 
+              value={technicianFilter}
+              onChange={(e) => setTechnicianFilter(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-transparent border border-border rounded-full text-[11px] uppercase tracking-widest focus:outline-none focus:border-primary appearance-none cursor-pointer"
+            >
+              <option value="All" className="bg-surface">All Technicians</option>
+              {technicians.map(tech => (
+                <option key={tech} value={tech} className="bg-surface">{tech}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[9px] uppercase tracking-widest text-on-surface-dim ml-2">Date Range</label>
+          <div className="flex gap-2">
+            <input 
+              type="date"
+              value={dateRange.start}
+              onChange={e => setDateRange({...dateRange, start: e.target.value})}
+              className="w-full px-3 py-2 bg-transparent border border-border rounded-full text-[11px] focus:outline-none focus:border-primary"
+            />
+            <input 
+              type="date"
+              value={dateRange.end}
+              onChange={e => setDateRange({...dateRange, end: e.target.value})}
+              className="w-full px-3 py-2 bg-transparent border border-border rounded-full text-[11px] focus:outline-none focus:border-primary"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[9px] uppercase tracking-widest text-on-surface-dim ml-2">Search</label>
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-dim" />
+            <input 
+              type="text" 
+              placeholder="Search..." 
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-transparent border border-border rounded-full text-[11px] uppercase tracking-widest focus:outline-none focus:border-primary"
+            />
+          </div>
+        </div>
+      </div>
 
       <AnimatePresence>
         {isAdding && (
@@ -203,7 +267,8 @@ export default function SampleList({ searchQuery: globalSearch }: SampleListProp
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="border border-border p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 group hover:border-primary/40 transition-all"
+            onClick={() => setSelectedSample(sample)}
+            className="border border-border p-4 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 group hover:border-primary/40 transition-all cursor-pointer"
           >
             <div className="flex items-center gap-4 sm:gap-8 flex-1">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-12 flex-1">
@@ -238,6 +303,7 @@ export default function SampleList({ searchQuery: globalSearch }: SampleListProp
             <div className="flex items-center justify-between md:justify-end gap-4 sm:gap-8">
               <select 
                 value={sample.status}
+                onClick={(e) => e.stopPropagation()}
                 onChange={(e) => handleStatusUpdate(sample.id, e.target.value)}
                 className={`px-3 sm:px-4 py-1 border text-[10px] sm:text-[11px] uppercase tracking-widest bg-transparent focus:outline-none cursor-pointer transition-all ${statusColors[sample.status] || 'border-border text-on-surface-dim'}`}
               >
@@ -246,7 +312,13 @@ export default function SampleList({ searchQuery: globalSearch }: SampleListProp
                 <option value="Completed" className="bg-surface">Completed</option>
                 <option value="Cancelled" className="bg-surface">Cancelled</option>
               </select>
-              <button className="p-2 hover:text-primary transition-colors">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedSample(sample);
+                }}
+                className="p-2 hover:text-primary transition-colors"
+              >
                 <MoreVertical className="w-4 h-4 text-on-surface-dim" />
               </button>
             </div>
@@ -257,6 +329,99 @@ export default function SampleList({ searchQuery: globalSearch }: SampleListProp
           </div>
         )}
       </div>
+
+      {/* Specimen Detail Modal */}
+      <AnimatePresence>
+        {selectedSample && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedSample(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-2xl bg-surface border border-border p-8 sm:p-12 shadow-2xl"
+            >
+              <button 
+                onClick={() => setSelectedSample(null)}
+                className="absolute top-6 right-6 text-on-surface-dim hover:text-primary transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              <div className="space-y-10">
+                <header>
+                  <span className="text-[11px] uppercase tracking-[3px] text-primary font-bold mb-2 block">Specimen Dossier</span>
+                  <h2 className="text-3xl font-serif italic text-on-surface">{selectedSample.patient_name}</h2>
+                  <p className="text-[12px] text-on-surface-dim uppercase tracking-widest mt-1">Ref: {selectedSample.id}</p>
+                </header>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
+                  <div className="space-y-6">
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest text-on-surface-dim block mb-2">Diagnostic Protocol</label>
+                      <p className="text-[15px] font-medium text-on-surface">{selectedSample.test_type}</p>
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest text-on-surface-dim block mb-2">Priority Level</label>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${selectedSample.priority === 'High' ? 'bg-rose-500' : 'bg-amber-400'}`} />
+                        <p className="text-[15px] font-medium text-on-surface">{selectedSample.priority}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest text-on-surface-dim block mb-2">Current Status</label>
+                      <span className={`inline-block px-3 py-1 border text-[11px] uppercase tracking-widest ${statusColors[selectedSample.status]}`}>
+                        {selectedSample.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest text-on-surface-dim block mb-2">Collection Timestamp</label>
+                      <div className="flex items-center gap-2 text-on-surface">
+                        <Calendar className="w-4 h-4 text-primary" />
+                        <p className="text-[14px]">{new Date(selectedSample.collected_at).toLocaleString()}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest text-on-surface-dim block mb-2">Originating Technician</label>
+                      <div className="flex items-center gap-2 text-on-surface">
+                        <User className="w-4 h-4 text-primary" />
+                        <p className="text-[14px]">{selectedSample.created_by || 'System Automated'}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase tracking-widest text-on-surface-dim block mb-2">System Entry</label>
+                      <p className="text-[14px] text-on-surface-dim">{new Date(selectedSample.created_at).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-8 border-t border-border flex justify-end gap-4">
+                  <button 
+                    onClick={() => setSelectedSample(null)}
+                    className="px-8 py-2 border border-border text-[11px] uppercase tracking-widest hover:bg-surface-low transition-all"
+                  >
+                    Close Dossier
+                  </button>
+                  <button 
+                    className="px-8 py-2 bg-primary text-on-primary text-[11px] uppercase tracking-widest font-bold hover:bg-primary/90 transition-all"
+                  >
+                    Print Label
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

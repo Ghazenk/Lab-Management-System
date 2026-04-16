@@ -22,6 +22,9 @@ export default function TestCatalog({ searchQuery: globalSearch }: TestCatalogPr
   const [localSearch, setLocalSearch] = useState('');
   const [tests, setTests] = useState<any[]>([]);
   const [isAdding, setIsAdding] = useState(false);
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [categoryFilter, setCategoryFilter] = useState('All');
   const [newTest, setNewTest] = useState({
     name: '',
     category: 'Hematology',
@@ -73,11 +76,34 @@ export default function TestCatalog({ searchQuery: globalSearch }: TestCatalogPr
     }
   };
 
-  const filteredTests = tests.filter(t => 
-    t.name?.toLowerCase().includes((localSearch || globalSearch).toLowerCase()) ||
-    t.category?.toLowerCase().includes((localSearch || globalSearch).toLowerCase()) ||
-    t.id?.toString().toLowerCase().includes((localSearch || globalSearch).toLowerCase())
-  );
+  const filteredTests = tests
+    .filter(t => {
+      const matchesSearch = t.name?.toLowerCase().includes((localSearch || globalSearch).toLowerCase()) ||
+                           t.category?.toLowerCase().includes((localSearch || globalSearch).toLowerCase()) ||
+                           t.id?.toString().toLowerCase().includes((localSearch || globalSearch).toLowerCase());
+      const matchesCategory = categoryFilter === 'All' || t.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      let valA = a[sortBy];
+      let valB = b[sortBy];
+
+      // Special handling for price (strip $ and convert to number)
+      if (sortBy === 'price') {
+        valA = parseFloat(valA.replace(/[^0-9.]/g, '')) || 0;
+        valB = parseFloat(valB.replace(/[^0-9.]/g, '')) || 0;
+      }
+      
+      // Special handling for time (extract first number)
+      if (sortBy === 'time') {
+        valA = parseInt(valA) || 0;
+        valB = parseInt(valB) || 0;
+      }
+
+      if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+      if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -104,16 +130,6 @@ export default function TestCatalog({ searchQuery: globalSearch }: TestCatalogPr
           <p className="text-on-surface-dim text-[10px] sm:text-[12px] uppercase tracking-widest mt-1">Available Analytical Protocols</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-dim" />
-            <input 
-              type="text" 
-              placeholder="Search protocols..." 
-              value={localSearch}
-              onChange={(e) => setLocalSearch(e.target.value)}
-              className="w-full pl-11 pr-6 py-2 bg-transparent border border-border rounded-full text-[12px] uppercase tracking-widest focus:outline-none focus:border-primary transition-all"
-            />
-          </div>
           <button 
             onClick={() => setIsAdding(true)}
             className="flex items-center justify-center gap-2 px-6 py-2 border border-primary text-primary rounded-full font-medium text-[11px] uppercase tracking-widest hover:bg-primary hover:text-on-primary transition-all whitespace-nowrap"
@@ -122,6 +138,63 @@ export default function TestCatalog({ searchQuery: globalSearch }: TestCatalogPr
           </button>
         </div>
       </header>
+
+      {/* Enhanced Filtering Bar */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border border-border bg-surface-low rounded-lg">
+        <div className="space-y-1.5">
+          <label className="text-[9px] uppercase tracking-widest text-on-surface-dim ml-2">Category</label>
+          <select 
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="w-full px-4 py-2 bg-transparent border border-border rounded-full text-[11px] uppercase tracking-widest focus:outline-none focus:border-primary appearance-none cursor-pointer"
+          >
+            <option value="All" className="bg-surface">All Categories</option>
+            {testCategories.map(cat => (
+              <option key={cat.name} value={cat.name} className="bg-surface">{cat.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[9px] uppercase tracking-widest text-on-surface-dim ml-2">Sort By</label>
+          <select 
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="w-full px-4 py-2 bg-transparent border border-border rounded-full text-[11px] uppercase tracking-widest focus:outline-none focus:border-primary appearance-none cursor-pointer"
+          >
+            <option value="name" className="bg-surface">Name</option>
+            <option value="category" className="bg-surface">Category</option>
+            <option value="time" className="bg-surface">Turnaround Time</option>
+            <option value="price" className="bg-surface">Price</option>
+          </select>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[9px] uppercase tracking-widest text-on-surface-dim ml-2">Order</label>
+          <select 
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+            className="w-full px-4 py-2 bg-transparent border border-border rounded-full text-[11px] uppercase tracking-widest focus:outline-none focus:border-primary appearance-none cursor-pointer"
+          >
+            <option value="asc" className="bg-surface">Ascending</option>
+            <option value="desc" className="bg-surface">Descending</option>
+          </select>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[9px] uppercase tracking-widest text-on-surface-dim ml-2">Search</label>
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-dim" />
+            <input 
+              type="text" 
+              placeholder="Search protocols..." 
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-transparent border border-border rounded-full text-[11px] uppercase tracking-widest focus:outline-none focus:border-primary"
+            />
+          </div>
+        </div>
+      </div>
 
       <AnimatePresence>
         {isAdding && (
