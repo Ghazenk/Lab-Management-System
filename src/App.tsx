@@ -68,10 +68,16 @@ export default function App() {
       .subscribe();
 
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setIsAuthReady(true);
-    });
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        setUser(session?.user ?? null);
+      })
+      .catch(err => {
+        console.error('Auth session error:', err);
+      })
+      .finally(() => {
+        setIsAuthReady(true);
+      });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -126,23 +132,21 @@ export default function App() {
       );
     }
 
-    const props = { setActiveTab, searchQuery };
-
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard {...props} />;
+        return <Dashboard setActiveTab={setActiveTab} />;
       case 'samples':
-        return <SampleList {...props} />;
+        return <SampleList searchQuery={searchQuery} />;
       case 'tests':
-        return <TestCatalog {...props} />;
+        return <TestCatalog searchQuery={searchQuery} />;
       case 'reports':
-        return <Reports {...props} />;
+        return <Reports searchQuery={searchQuery} />;
       case 'equipment':
-        return <Equipment {...props} />;
+        return <Equipment searchQuery={searchQuery} />;
       case 'patients':
-        return <PatientRegistry {...props} />;
+        return <PatientRegistry searchQuery={searchQuery} />;
       case 'settings':
-        return <Settings {...props} />;
+        return <Settings />;
       default:
         return (
           <div className="flex flex-col items-center justify-center h-[60vh] text-on-surface-dim">
