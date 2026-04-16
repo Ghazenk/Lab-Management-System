@@ -204,8 +204,8 @@ export default function App() {
               
               <div className="flex items-center gap-4">
                 <div className="text-right hidden md:block">
-                  <p className="text-sm font-medium text-on-surface">{user?.displayName || 'Dr. Elias Thorne'}</p>
-                  <p className="text-[10px] uppercase tracking-widest text-on-surface-dim">Chief Pathologist</p>
+                  <p className="text-sm font-medium text-on-surface">{user?.displayName || 'Dr. Ghazen Khalid'}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-on-surface-dim">Chief</p>
                 </div>
                 <div className="w-10 h-10 border border-border flex items-center justify-center overflow-hidden shrink-0">
                   <img 
@@ -245,7 +245,7 @@ export default function App() {
               </div>
               <div className="flex items-center gap-4 sm:gap-8">
                 <span className="text-[10px] font-medium text-on-surface-dim uppercase tracking-widest hover:text-primary cursor-pointer transition-colors">Registry v4.2.0</span>
-                <span className="text-[10px] font-medium text-on-surface-dim uppercase tracking-widest">Helix Laboratory OS</span>
+                <span className="text-[10px] font-medium text-on-surface-dim uppercase tracking-widest">BMC</span>
               </div>
             </div>
           </footer>

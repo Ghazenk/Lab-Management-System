@@ -79,7 +79,7 @@ export default function Dashboard({ setActiveTab }: DashboardProps) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `helix_registry_export_${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `bmc_registry_export_${new Date().toISOString().split('T')[0]}.json`;
       a.click();
       setIsExporting(false);
     }, 1500);
@@ -168,7 +168,7 @@ export default function Dashboard({ setActiveTab }: DashboardProps) {
             Analytical Overview
           </span>
           <h1 className="text-3xl sm:text-[42px] font-serif font-normal text-on-surface leading-none">
-            Central Lab Node-4
+            BMC Command Center
           </h1>
         </div>
         <div className="flex flex-wrap gap-4 items-center">

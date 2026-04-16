@@ -30,8 +30,8 @@ export default function Settings() {
   const [isSaving, setIsSaving] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState({
-    full_name: 'Laboratory Administrator',
-    designation: 'Chief Pathologist',
+    full_name: 'Dr. Ghazen Khalid',
+    designation: 'Chief',
     email: ''
   });
   const [toggles, setToggles] = useState({
@@ -224,7 +224,7 @@ export default function Settings() {
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div>
           <h1 className="text-3xl font-serif font-normal text-on-surface tracking-tight">System Configuration</h1>
-          <p className="text-on-surface-dim text-[12px] uppercase tracking-widest mt-1">Helix Laboratory OS v4.2.0 Settings</p>
+          <p className="text-on-surface-dim text-[12px] uppercase tracking-widest mt-1">BMC System Settings</p>
         </div>
         <button 
           onClick={handleSave}

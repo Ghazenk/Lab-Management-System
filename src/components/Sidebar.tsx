@@ -43,7 +43,7 @@ export default function Sidebar({ activeTab, setActiveTab, isOpen, onClose }: Si
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="flex items-center justify-between mb-14">
-          <span className="font-serif italic text-2xl text-primary tracking-tight">Helix.OS</span>
+          <span className="font-serif italic text-2xl text-primary tracking-tight">BMC</span>
           <button onClick={onClose} className="lg:hidden text-on-surface-dim hover:text-on-surface">
             <X className="w-6 h-6" />
           </button>
@@ -78,8 +78,8 @@ export default function Sidebar({ activeTab, setActiveTab, isOpen, onClose }: Si
 
         <div className="pt-6 border-t border-border mt-auto">
           <div className="mb-4">
-            <p className="text-sm font-medium text-on-surface">Dr. Elias Thorne</p>
-            <p className="text-[11px] uppercase tracking-wider text-on-surface-dim">Chief Pathologist</p>
+            <p className="text-sm font-medium text-on-surface">Dr. Ghazen Khalid</p>
+            <p className="text-[11px] uppercase tracking-wider text-on-surface-dim">Chief</p>
           </div>
           <button className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-on-surface-dim hover:text-on-surface transition-colors">
             <LogOut className="w-3 h-3" />
