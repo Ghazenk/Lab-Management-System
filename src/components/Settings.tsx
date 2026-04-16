@@ -32,7 +32,8 @@ export default function Settings() {
   const [profile, setProfile] = useState({
     full_name: 'Dr. Ghazen Khalid',
     designation: 'Chief',
-    email: ''
+    email: '',
+    photo_url: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=200&h=200'
   });
   const [toggles, setToggles] = useState({
     autoSync: true,
@@ -113,6 +114,16 @@ export default function Settings() {
                 readOnly
                 value={profile.email} 
                 className="w-full bg-transparent border border-border p-3 text-[13px] text-on-surface-dim outline-none cursor-not-allowed" 
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] uppercase tracking-widest text-on-surface-dim">Profile Picture URL</label>
+              <input 
+                type="text" 
+                value={profile.photo_url} 
+                onChange={e => setProfile({...profile, photo_url: e.target.value})}
+                className="w-full bg-transparent border border-border p-3 text-[13px] text-on-surface focus:border-primary outline-none" 
+                placeholder="https://..."
               />
             </div>
           </div>

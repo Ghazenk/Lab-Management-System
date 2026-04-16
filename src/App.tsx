@@ -209,7 +209,7 @@ export default function App() {
                 </div>
                 <div className="w-10 h-10 border border-border flex items-center justify-center overflow-hidden shrink-0">
                   <img 
-                    src={user?.photoURL || "https://picsum.photos/seed/doctor/100/100"} 
+                    src={user?.photoURL || "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=200&h=200"} 
                     alt="Avatar" 
                     className={`w-full h-full object-cover transition-all duration-500 ${isDark ? 'grayscale hover:grayscale-0' : ''}`}
                     referrerPolicy="no-referrer"
